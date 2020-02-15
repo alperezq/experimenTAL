@@ -1,0 +1,47 @@
+
+#This set of scripts will allow to:
+#Generate figures multiple alignments for TALs, starting for a fasta file from either nucleotides or aa tal sequences
+#To avoid problems make sure there's no spaces in the Fasta IDs
+
+
+1. perl  DisTAL_v1.2_matest.pl -m T SampleTALs.fa Out
+                                    
+#The -m T tells the program to create a distanc ematrix again each time, not using this paramter could ruin all the other steps
+#this version of disTAL can take into account the N and C termini
+#and has modifications so that the distance matrix generated is compatible with the subsequent scripts
+#make sure the file Info/Initial_TAL_strings.txt exists
+make sure the folder running dital also includes arlem (and it's executable) and pp_map_result_ALPQ.pl
+
+#Running this will generate a standard Output folder with disTAL results, these outputs will be used for the next steps
+
+2. perl Analyze_TALs1.pl Outputs/Out.mat 4.5 Outputs/Out_CodedRepeats.fa T
+
+#this script first assigns groups to each TAL according to the distances output by disTAL, the distance is the second input in the command (recommended 4.5 to 4.8)
+#it generates files with coded repeats to be used by arlem
+#then this script reconstructs the alignments put out by arlem and DisTAL as pairwise alignments, it generates a file named Aligned_TEV_ALL
+
+#if needed, modifiy the script so additional files that can be generated:
+#the "_nolasts" excludes the last repeat form the alignments since this repeat being ufually identical could weight the alignment towards the C terminus, however, if the file used included the whole TAL sequence and not only repeats this should not be an issue
+#the "_nolasts_unique" was a file used to reduce redundancy in certain cases
+
+3. perl Analyze_TALs2.pl Aligned_TEV_ALL Coded_Reps_withgroups_4.5.fa
+
+#this script uses 2 ouputs form the previous script to generate a multiple alignment for each group based on the arlem alignment, all to the file "Multiple_align"
+#basically one sequences is chosen as reference (the longest of each group) and then the arlem alignments of each other member of the group against that reference are shown
+#if various sequences are the longest one, the referenc eis chosen at random
+#only groups with more than 2 members are aligned
+
+4. perl Generate_Bigmat.pl Outputs/Out_Repeatmatrix.mat BigRepDist.mat
+
+#this script is simply to generate a rectangular version of the triangular matrix used by arlem, so it can be used for R in next steps
+
+
+#IMPORTANT NOTE Before running the next step 
+#the script used to generate the alignment files showing the RVDs is very imperfect,it simply takes the repeats in the Outputs/Out_Repeatscode.txt and selects the 12 and 13th letter in each repeat as the RVD, as a consequence if the N and C termini were included there will aparent RVDs at the beggining and end of eahc sequence that are not such thing.
+#Also, tthis script doesn't identify "N*" or "H*" RVDs, the best way to include these in the alignment files is to edit the "Outputs/Out_Repeatscode.txt" file and include "*" where is needed (by identifying shorter repeats and introducing an asterisk in the 13th position), I need to find a good way to automatize this
+
+5. perl Alignement_files.pl Outputs/Out_Repeatscode.txt Multiple_align
+
+# this script will generate folder with alignments files needed to be processed in R to generate heatmaps, might generate warnings
+
+
